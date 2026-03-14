@@ -351,15 +351,23 @@
     <!-- Firebase SDK & Logic (Real-time DB) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Environment variables
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'advance-tool-voting';
-        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        // Your Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkC7y6GCAhqGRNgLFlKRj-NVJVuf_pBfc",
+            authDomain: "vottool.firebaseapp.com",
+            projectId: "vottool",
+            storageBucket: "vottool.firebasestorage.app",
+            messagingSenderId: "702595309388",
+            appId: "1:702595309388:web:ccd42416ac940832d9b9e9",
+            measurementId: "G-23JVBM1XR6"
+        };
 
-        let db, auth;
-        let isFirebaseActive = false;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
         // Load data from localStorage to prevent it from disappearing on refresh
         let savedVoteData = localStorage.getItem('advance_tool_vote_data_store');
@@ -416,44 +424,24 @@
             }, 3000);
         }
 
-        // Setup Firebase
-        if (firebaseConfigStr) {
-            try {
-                const firebaseConfig = JSON.parse(firebaseConfigStr);
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                isFirebaseActive = true;
-            } catch (e) {
-                console.error("Firebase init error", e);
-            }
-        }
-
         async function initAuth() {
-            if (isFirebaseActive) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
+            try {
+                // Sign in anonymously so users can read/write without making an account
+                await signInAnonymously(auth);
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        listenToVotes();
                     }
-                    
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) {
-                            listenToVotes();
-                        }
-                    });
-                } catch (e) {
-                    console.error("Auth error", e);
-                    updateUI(voteData); // Fallback to local data
-                }
-            } else {
-                updateUI(voteData);
+                });
+            } catch (e) {
+                console.error("Auth error", e);
+                updateUI(voteData); // Fallback to local data
             }
         }
 
         function listenToVotes() {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'polls', 'poll_results');
+            // Path in your own Firebase Firestore database
+            const docRef = doc(db, 'advance_tool_polls', 'poll_results_v1');
             onSnapshot(docRef, (snapshot) => {
                 if (snapshot.exists()) {
                     voteData = snapshot.data();
@@ -486,8 +474,8 @@
             showToast("আপনার ভোট সফলভাবে জমা হয়েছে!");
 
             // Save to Database
-            if (isFirebaseActive && auth.currentUser) {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'polls', 'poll_results');
+            if (auth.currentUser) {
+                const docRef = doc(db, 'advance_tool_polls', 'poll_results_v1');
                 try {
                     // Fetch latest to prevent overriding simultaneous votes
                     const snap = await getDoc(docRef);
