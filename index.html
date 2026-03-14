@@ -361,8 +361,9 @@
         let db, auth;
         let isFirebaseActive = false;
         
-        // Initial Data (Starts at 0 to prevent fake votes)
-        let voteData = { plan1: 0, plan2: 0, plan3: 0 }; 
+        // Load data from localStorage to prevent it from disappearing on refresh
+        let savedVoteData = localStorage.getItem('advance_tool_vote_data_store');
+        let voteData = savedVoteData ? JSON.parse(savedVoteData) : { plan1: 0, plan2: 0, plan3: 0 }; 
         let hasVotedLocally = localStorage.getItem('advance_tool_voted') === 'true';
 
         // UI Update Function
@@ -444,7 +445,7 @@
                     });
                 } catch (e) {
                     console.error("Auth error", e);
-                    updateUI(voteData); // Fallback to 0 data
+                    updateUI(voteData); // Fallback to local data
                 }
             } else {
                 updateUI(voteData);
@@ -456,6 +457,7 @@
             onSnapshot(docRef, (snapshot) => {
                 if (snapshot.exists()) {
                     voteData = snapshot.data();
+                    localStorage.setItem('advance_tool_vote_data_store', JSON.stringify(voteData)); // Save locally
                     updateUI(voteData);
                 } else {
                     // Initialize if not exists
@@ -476,7 +478,10 @@
             // Optimistic Update & Lock UI
             hasVotedLocally = true;
             localStorage.setItem('advance_tool_voted', 'true');
+            
             voteData[planId] = (voteData[planId] || 0) + 1;
+            localStorage.setItem('advance_tool_vote_data_store', JSON.stringify(voteData)); // Save locally
+            
             updateUI(voteData);
             showToast("আপনার ভোট সফলভাবে জমা হয়েছে!");
 
