@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Tool | Live Voting</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Hind Siliguri for Bengali -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Hind Siliguri', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#050B14',
+                            primary: '#00F0FF',
+                            secondary: '#7000FF',
+                            accent: '#FF003C'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050B14;
+            color: #ffffff;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* ফিউচারিস্টিক ব্যাকগ্রাউন্ড অ্যানিমেশন */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: 
+                linear-gradient(to right, rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -2;
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) translateZ(-200px);
+            animation: gridMove 20s linear infinite;
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+
+        /* গ্লোয়িং অর্বস */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+        .orb-1 { width: 300px; height: 300px; background: rgba(112, 0, 255, 0.3); top: 10%; left: 20%; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(0, 240, 255, 0.2); bottom: 10%; right: 10%; }
+
+        /* গ্লাসমরফিজম কার্ড */
+        .glass-card {
+            background: rgba(16, 23, 38, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 240, 255, 0.6);
+        }
+
+        /* স্পেশাল কার্ড (Advance Tool) */
+        .special-card {
+            background: linear-gradient(180deg, rgba(112, 0, 255, 0.1) 0%, rgba(16, 23, 38, 0.8) 100%);
+            border: 2px solid #7000FF;
+            box-shadow: 0 0 30px rgba(112, 0, 255, 0.2);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        @media (max-width: 768px) {
+            .special-card {
+                transform: scale(1);
+            }
+        }
+
+        .special-card:hover {
+            border-color: #00F0FF;
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.4);
+        }
+
+        /* নিয়ন বাটন */
+        .btn-neon {
+            background: linear-gradient(90deg, #7000FF, #00F0FF);
+            color: white;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .btn-neon::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, #00F0FF, #7000FF);
+            z-index: -1;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+        .btn-neon:hover:not(:disabled)::before {
+            opacity: 1;
+        }
+        .btn-neon:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+            transform: scale(1.02);
+        }
+        .btn-neon:disabled {
+            background: #374151;
+            color: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-neon:disabled::before {
+            display: none;
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #00F0FF, #7000FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* প্রোগ্রেস বার অ্যানিমেশন */
+        .progress-bar-fill {
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050B14; }
+        ::-webkit-scrollbar-thumb { background: #7000FF; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F0FF; }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-primary selection:text-brand-dark">
+
+    <div class="bg-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- ন্যাভিগেশন বার -->
+    <nav class="fixed w-full z-40 top-0 transition-all duration-300 backdrop-blur-md bg-brand-dark/50 border-b border-brand-primary/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-center h-20">
+                <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <i class="fa-solid fa-layer-group text-3xl text-brand-primary animate-pulse"></i>
+                    <span class="font-bold text-2xl tracking-wider text-white">ADVANCE <span class="text-brand-primary">TOOL</span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- হিরো সেকশন -->
+    <section class="relative pt-32 pb-10 lg:pt-40 lg:pb-16 overflow-hidden flex flex-col items-center">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <div class="inline-block mb-4 px-6 py-2 rounded-full border border-brand-accent/50 bg-brand-accent/10 text-brand-accent font-bold text-sm backdrop-blur-sm animate-bounce">
+                <i class="fa-solid fa-satellite-dish mr-2"></i> লাইভ ভোটিং চলছে...
+            </div>
+            <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                কোন প্ল্যানটি আমরা <span class="text-gradient">লঞ্চ করব?</span> <br> 
+                এক ক্লিকে ভোট দিন!
+            </h1>
+            <p class="mt-4 text-xl text-gray-300 max-w-3xl mx-auto mb-6 leading-relaxed">
+                আপনার মতামত আমাদের কাছে গুরুত্বপূর্ণ। নিচে দেওয়া প্ল্যানগুলো থেকে আপনার পছন্দের প্ল্যানটিতে ভোট দিন। <strong class="text-brand-primary">যেই প্ল্যানটিতে সবচেয়ে বেশি ভোট পড়বে, সেটিই রিলিজ হবে!</strong>
+            </p>
+            
+            <div class="flex justify-center items-center gap-3 text-gray-400 bg-gray-800/50 inline-flex px-6 py-3 rounded-full border border-gray-700">
+                <i class="fa-solid fa-users text-brand-primary"></i> 
+                <span>সর্বমোট ভোট পড়েছে: <strong id="total-votes-count" class="text-white text-xl">০</strong> টি</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ভোটিং কার্ডস -->
+    <section class="py-5 relative z-10 mb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6 lg:gap-10 items-stretch">
+                
+                <!-- Plan 1 (Basic) -->
+                <div class="glass-card p-6 md:p-8 flex flex-col h-full rounded-2xl relative">
+                    <div class="mb-4">
+                        <span class="bg-gray-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">বেসিক প্ল্যান</span>
+                        <h3 class="text-3xl font-bold text-white mt-4 mb-1">৳ ১,০২০</h3>
+                    </div>
+                    
+                    <!-- Progress Bar (Live Data) -->
+                    <div class="mb-6 bg-gray-900/80 p-3 rounded-xl border border-gray-700/50">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-gray-300 font-bold" id="pct-plan1">0%</span>
+                            <span class="text-gray-400 text-xs" id="count-plan1">0 Votes</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                            <div id="bar-plan1" class="bg-gray-400 h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow">
+                        <ul class="space-y-3 mb-8 text-sm md:text-base">
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-300">শুধু টুলস বানানো শেখানো হবে</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <button id="btn-plan1" class="vote-btn w-full py-3 md:py-4 rounded-xl font-bold text-lg border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-dark transition-all duration-300">
+                        <i class="fa-solid fa-hand-pointer mr-2"></i> ভোট দিন
+                    </button>
+                </div>
+
+                <!-- Plan 3 (Advance - Recommended) -->
+                <div class="glass-card special-card p-6 md:p-8 flex flex-col h-full rounded-2xl relative md:-mt-6 md:mb-6">
+                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-max">
+                        <span class="bg-gradient-to-r from-brand-secondary to-brand-primary text-white text-xs md:text-sm font-bold px-6 py-2 rounded-full shadow-[0_0_15px_rgba(0,240,255,0.5)]">
+                            🔥 Advance Tool (Recommended)
+                        </span>
+                    </div>
+                    <div class="mb-4 mt-4">
+                        <h3 class="text-4xl md:text-5xl font-bold text-white mb-1">৳ ৪,২০০</h3>
+                        <p class="text-brand-primary text-sm font-semibold">ফুল স্ট্যাক প্যাকেজ</p>
+                    </div>
+
+                    <!-- Progress Bar (Live Data) -->
+                    <div class="mb-6 bg-gray-900/80 p-3 rounded-xl border border-brand-primary/30 shadow-[inset_0_0_10px_rgba(0,240,255,0.1)]">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-brand-primary font-bold" id="pct-plan3">0%</span>
+                            <span class="text-gray-400 text-xs" id="count-plan3">0 Votes</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                            <div id="bar-plan3" class="bg-gradient-to-r from-brand-secondary to-brand-primary h-2.5 rounded-full progress-bar-fill shadow-[0_0_10px_#00F0FF]" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow">
+                        <ul class="space-y-3 mb-8 text-sm md:text-base">
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">সকল প্রকার টুলস তৈরি</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">বট ডেভেলপমেন্ট</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">ওয়েবসাইট তৈরি</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">অ্যাপ ডেভেলপমেন্ট</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">অটোমেশন ও ইমুলেটর অটোমেশন</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check-double text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-100 font-medium">লাইভ প্রজেক্ট বিল্ডিং</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-crown text-yellow-400 mt-1 mr-3"></i>
+                                <span class="text-yellow-400 font-bold">AI Pro সাবস্ক্রিপশন ইনক্লুডেড!</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <button id="btn-plan3" class="vote-btn w-full btn-neon py-3 md:py-4 rounded-xl font-bold text-lg md:text-xl shadow-lg shadow-brand-secondary/30">
+                        <i class="fa-solid fa-fire mr-2"></i> এটিতে ভোট দিন
+                    </button>
+                </div>
+
+                <!-- Plan 2 (Standard) -->
+                <div class="glass-card p-6 md:p-8 flex flex-col h-full rounded-2xl relative">
+                    <div class="mb-4">
+                        <span class="bg-gray-700 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">স্ট্যান্ডার্ড প্ল্যান</span>
+                        <h3 class="text-3xl font-bold text-white mt-4 mb-1">৳ ২,০২০</h3>
+                    </div>
+
+                    <!-- Progress Bar (Live Data) -->
+                    <div class="mb-6 bg-gray-900/80 p-3 rounded-xl border border-gray-700/50">
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-brand-secondary font-bold" id="pct-plan2">0%</span>
+                            <span class="text-gray-400 text-xs" id="count-plan2">0 Votes</span>
+                        </div>
+                        <div class="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden">
+                            <div id="bar-plan2" class="bg-brand-secondary h-2.5 rounded-full progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow">
+                        <ul class="space-y-3 mb-8 text-sm md:text-base">
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-300">টুলস তৈরি</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-300">বট ডেভেলপমেন্ট</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fa-solid fa-check text-brand-primary mt-1 mr-3"></i>
+                                <span class="text-gray-300">ওয়েবসাইট তৈরি</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <button id="btn-plan2" class="vote-btn w-full py-3 md:py-4 rounded-xl font-bold text-lg border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-brand-dark transition-all duration-300">
+                        <i class="fa-solid fa-hand-pointer mr-2"></i> ভোট দিন
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ফুটার -->
+    <footer class="border-t border-gray-800 bg-brand-dark/80 backdrop-blur-md pt-8 pb-6 relative z-10 text-center text-gray-400">
+        <p>&copy; 2026 Advance Tool. All rights reserved.</p>
+    </footer>
+
+    <!-- টোস্ট নোটিফিকেশন -->
+    <div id="toast" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(34,197,94,0.4)] translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-xl"></i> 
+        <span id="toast-msg">ভোট গ্রহণ করা হয়েছে!</span>
+    </div>
+
+    <!-- Firebase SDK & Logic (Real-time DB) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'advance-tool-voting';
+        const firebaseConfigStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+
+        let db, auth;
+        let isFirebaseActive = false;
+        
+        // Initial Data (Starts at 0 to prevent fake votes)
+        let voteData = { plan1: 0, plan2: 0, plan3: 0 }; 
+        let hasVotedLocally = localStorage.getItem('advance_tool_voted') === 'true';
+
+        // UI Update Function
+        function updateUI(data) {
+            const total = (data.plan1 || 0) + (data.plan2 || 0) + (data.plan3 || 0);
+            
+            // Format Bengali Digits
+            const toBn = n => n.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+            
+            document.getElementById('total-votes-count').innerText = toBn(total);
+
+            // Calculate Percentages safely
+            const p1Pct = total === 0 ? 0 : Math.round((data.plan1 / total) * 100);
+            const p2Pct = total === 0 ? 0 : Math.round((data.plan2 / total) * 100);
+            const p3Pct = total === 0 ? 0 : Math.round((data.plan3 / total) * 100);
+
+            // Update DOM Elements
+            document.getElementById('pct-plan1').innerText = `${p1Pct}%`;
+            document.getElementById('count-plan1').innerText = `${data.plan1 || 0} Votes`;
+            document.getElementById('bar-plan1').style.width = `${p1Pct}%`;
+
+            document.getElementById('pct-plan2').innerText = `${p2Pct}%`;
+            document.getElementById('count-plan2').innerText = `${data.plan2 || 0} Votes`;
+            document.getElementById('bar-plan2').style.width = `${p2Pct}%`;
+
+            document.getElementById('pct-plan3').innerText = `${p3Pct}%`;
+            document.getElementById('count-plan3').innerText = `${data.plan3 || 0} Votes`;
+            document.getElementById('bar-plan3').style.width = `${p3Pct}%`;
+            
+            checkVoteStatus();
+        }
+
+        function checkVoteStatus() {
+            if (hasVotedLocally) {
+                const buttons = document.querySelectorAll('.vote-btn');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> ভোট দেওয়া হয়েছে';
+                    btn.classList.remove('border-brand-primary', 'text-brand-primary', 'hover:bg-brand-primary');
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Setup Firebase
+        if (firebaseConfigStr) {
+            try {
+                const firebaseConfig = JSON.parse(firebaseConfigStr);
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                isFirebaseActive = true;
+            } catch (e) {
+                console.error("Firebase init error", e);
+            }
+        }
+
+        async function initAuth() {
+            if (isFirebaseActive) {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            listenToVotes();
+                        }
+                    });
+                } catch (e) {
+                    console.error("Auth error", e);
+                    updateUI(voteData); // Fallback to 0 data
+                }
+            } else {
+                updateUI(voteData);
+            }
+        }
+
+        function listenToVotes() {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'polls', 'poll_results');
+            onSnapshot(docRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    voteData = snapshot.data();
+                    updateUI(voteData);
+                } else {
+                    // Initialize if not exists
+                    setDoc(docRef, { plan1: 0, plan2: 0, plan3: 0 });
+                }
+            }, (error) => {
+                console.error("Listen error", error);
+            });
+        }
+
+        // Expose vote function globally for buttons
+        window.castVote = async function(planId) {
+            if (hasVotedLocally) {
+                showToast("আপনি ইতিমধ্যে একটি ভোট দিয়েছেন!");
+                return;
+            }
+
+            // Optimistic Update & Lock UI
+            hasVotedLocally = true;
+            localStorage.setItem('advance_tool_voted', 'true');
+            voteData[planId] = (voteData[planId] || 0) + 1;
+            updateUI(voteData);
+            showToast("আপনার ভোট সফলভাবে জমা হয়েছে!");
+
+            // Save to Database
+            if (isFirebaseActive && auth.currentUser) {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'polls', 'poll_results');
+                try {
+                    // Fetch latest to prevent overriding simultaneous votes
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        let latestData = snap.data();
+                        latestData[planId] = (latestData[planId] || 0) + 1;
+                        await setDoc(docRef, latestData, { merge: true });
+                    } else {
+                        let newData = { plan1: 0, plan2: 0, plan3: 0 };
+                        newData[planId] = 1;
+                        await setDoc(docRef, newData);
+                    }
+                } catch (e) {
+                    console.error("Vote save error", e);
+                }
+            }
+        }
+
+        // Add Click Listeners
+        document.getElementById('btn-plan1').addEventListener('click', () => castVote('plan1'));
+        document.getElementById('btn-plan2').addEventListener('click', () => castVote('plan2'));
+        document.getElementById('btn-plan3').addEventListener('click', () => castVote('plan3'));
+
+        // Boot
+        initAuth();
+        updateUI(voteData); // Initial render
+    </script>
+</body>
+</html>
